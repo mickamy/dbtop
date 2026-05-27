@@ -1,3 +1,6 @@
 package postgres
 
-var GuardVersion = guardVersion
+var (
+	GuardVersion = guardVersion
+	ParseState   = parseState
+)
