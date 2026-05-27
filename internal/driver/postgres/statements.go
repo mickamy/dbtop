@@ -24,6 +24,7 @@ SELECT
   shared_blks_hit,
   shared_blks_read
 FROM pg_stat_statements
+WHERE dbid = (SELECT oid FROM pg_database WHERE datname = current_database())
 ORDER BY total_exec_time DESC
 LIMIT 100
 `
