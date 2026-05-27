@@ -17,13 +17,13 @@ type Driver interface {
 	// Terminate forcibly closes the connection (pg_terminate_backend / KILL CONNECTION).
 	Terminate(ctx context.Context, pid int64) error
 
-	Capabilities(ctx context.Context) (Caps, error)
+	Capabilities(ctx context.Context) (Capabilities, error)
 	Close() error
 }
 
-// Caps reports the privileges and features available to the connected user,
-// used to degrade gracefully and to render the startup banner.
-type Caps struct {
+// Capabilities reports the privileges and features available to the connected
+// user, used to degrade gracefully and to render the startup banner.
+type Capabilities struct {
 	Superuser bool
 
 	// Can read other backends' full query text (pg_monitor / PROCESS).
