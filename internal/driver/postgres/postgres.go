@@ -17,6 +17,9 @@ const minServerVersionNum = 140000
 // Small pool: a poll and a kill may run at once, nothing more.
 const maxConns = 3
 
+// appName tags dbtop's own connections so they can be excluded from metrics.
+const appName = "dbtop"
+
 type Driver struct {
 	pool *pgxpool.Pool
 }
@@ -30,6 +33,7 @@ func Open(ctx context.Context, dsn string) (*Driver, error) {
 	}
 
 	cfg.MaxConns = maxConns
+	cfg.ConnConfig.RuntimeParams["application_name"] = appName
 
 	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {

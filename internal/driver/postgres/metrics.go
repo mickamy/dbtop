@@ -38,6 +38,7 @@ CROSS JOIN (
     count(*) FILTER (WHERE state IN ('idle in transaction', 'idle in transaction (aborted)')) AS idle_tx
   FROM pg_stat_activity
   WHERE backend_type = 'client backend'
+    AND application_name <> $1
 ) c
 WHERE d.datname = current_database()
 `
@@ -52,7 +53,7 @@ FROM pg_stat_replication
 func (d *Driver) Metrics(ctx context.Context) (driver.MetricSample, error) {
 	sample := driver.MetricSample{At: time.Now()}
 
-	err := d.pool.QueryRow(ctx, metricsQuery).Scan(
+	err := d.pool.QueryRow(ctx, metricsQuery, appName).Scan(
 		&sample.MaxConnections,
 		&sample.Conns.Total,
 		&sample.Conns.Active,
