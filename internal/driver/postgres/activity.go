@@ -50,17 +50,17 @@ func (d *Driver) Activity(ctx context.Context) ([]driver.Backend, error) {
 		}
 
 		backends = append(backends, driver.Backend{
-			PID:              pid,
-			User:             ptr.OrZero(user),
-			DB:               ptr.OrZero(db),
-			State:            parseState(ptr.OrZero(state)),
-			WaitType:         ptr.OrZero(waitType),
-			WaitEvent:        ptr.OrZero(waitEvent),
-			Query:            ptr.OrZero(query),
-			BlockedBy:        blockedBy,
-			QueryAge:         ptr.Map(queryAge, durations.FromSeconds),
-			XactAge:          ptr.Map(xactAge, durations.FromSeconds),
-			BackgroundWorker: ptr.OrZero(backendType) != "client backend",
+			PID:           pid,
+			User:          ptr.OrZero(user),
+			DB:            ptr.OrZero(db),
+			State:         parseState(ptr.OrZero(state)),
+			WaitType:      ptr.OrZero(waitType),
+			WaitEvent:     ptr.OrZero(waitEvent),
+			Query:         ptr.OrZero(query),
+			BlockedBy:     blockedBy,
+			QueryAge:      ptr.Map(queryAge, durations.FromSeconds),
+			XactAge:       ptr.Map(xactAge, durations.FromSeconds),
+			SystemBackend: ptr.OrZero(backendType) != "client backend",
 		})
 	}
 

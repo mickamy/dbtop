@@ -50,8 +50,8 @@ type Backend struct {
 	QueryAge *time.Duration
 	XactAge  *time.Duration
 
-	// Non-client backend, hidden by default.
-	BackgroundWorker bool
+	// System-internal (non-client) backend, hidden by default.
+	SystemBackend bool
 }
 
 // Duration returns the value shown in the DURATION column. Idle and unknown
