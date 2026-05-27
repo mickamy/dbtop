@@ -12,7 +12,7 @@ import (
 const activityQuery = `
 SELECT a.pid, a.usename, a.datname, a.state,
        a.wait_event_type, a.wait_event, a.query, a.backend_type,
-       pg_blocking_pids(a.pid)                           AS blocked_by,
+       pg_blocking_pids(a.pid)::bigint[]                 AS blocked_by,
        EXTRACT(EPOCH FROM now() - a.query_start)::float8 AS query_age,
        EXTRACT(EPOCH FROM now() - a.xact_start)::float8  AS xact_age
 FROM pg_stat_activity a
