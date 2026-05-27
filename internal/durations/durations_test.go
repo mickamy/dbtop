@@ -29,3 +29,26 @@ func TestFromSeconds(t *testing.T) {
 		})
 	}
 }
+
+func TestFromMillis(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		in   float64
+		want time.Duration
+	}{
+		{0.26, 260 * time.Microsecond},
+		{0, 0},
+		{1500, 1500 * time.Millisecond},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.want.String(), func(t *testing.T) {
+			t.Parallel()
+
+			if got := durations.FromMillis(tt.in); got != tt.want {
+				t.Errorf("FromMillis(%v) = %v, want %v", tt.in, got, tt.want)
+			}
+		})
+	}
+}
