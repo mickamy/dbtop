@@ -18,9 +18,11 @@ SELECT a.pid, a.usename, a.datname, a.state,
 FROM pg_stat_activity a
 WHERE a.pid <> pg_backend_pid()
 ORDER BY CASE
+           WHEN a.state = 'active'
+             THEN EXTRACT(EPOCH FROM now() - a.query_start)
            WHEN a.state IN ('idle in transaction', 'idle in transaction (aborted)')
              THEN EXTRACT(EPOCH FROM now() - a.xact_start)
-           ELSE EXTRACT(EPOCH FROM now() - a.query_start)
+           ELSE NULL
          END DESC NULLS LAST
 `
 
