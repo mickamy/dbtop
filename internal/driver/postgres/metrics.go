@@ -38,7 +38,7 @@ CROSS JOIN (
     count(*) FILTER (WHERE state IN ('idle in transaction', 'idle in transaction (aborted)')) AS idle_tx
   FROM pg_stat_activity
   WHERE backend_type = 'client backend'
-    AND application_name <> $1
+    AND coalesce(application_name, '') <> $1
 ) c
 WHERE d.datname = current_database()
 `

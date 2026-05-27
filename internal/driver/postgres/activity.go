@@ -17,7 +17,7 @@ SELECT a.pid, a.usename, a.datname, a.state,
        EXTRACT(EPOCH FROM now() - a.xact_start)::float8  AS xact_age
 FROM pg_stat_activity a
 WHERE a.pid <> pg_backend_pid()
-  AND a.application_name <> $1
+  AND coalesce(a.application_name, '') <> $1
 ORDER BY CASE
            WHEN a.state = 'active'
              THEN EXTRACT(EPOCH FROM now() - a.query_start)
