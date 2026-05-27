@@ -13,12 +13,10 @@ import (
 const metricsQuery = `
 SELECT
   current_setting('max_connections')::int,
-  (SELECT count(*) FROM pg_stat_activity WHERE backend_type = 'client backend'),
-  (SELECT count(*) FROM pg_stat_activity WHERE backend_type = 'client backend' AND state = 'active'),
-  (SELECT count(*) FROM pg_stat_activity WHERE backend_type = 'client backend' AND state = 'idle'),
-  (SELECT count(*) FROM pg_stat_activity
-   WHERE backend_type = 'client backend'
-     AND state IN ('idle in transaction', 'idle in transaction (aborted)')),
+  c.total,
+  c.active,
+  c.idle,
+  c.idle_tx,
   (SELECT count(*) FROM pg_locks WHERE NOT granted),
   d.xact_commit,
   d.xact_rollback,
@@ -32,6 +30,15 @@ SELECT
   d.temp_files,
   d.temp_bytes
 FROM pg_stat_database d
+CROSS JOIN (
+  SELECT
+    count(*)                                 AS total,
+    count(*) FILTER (WHERE state = 'active') AS active,
+    count(*) FILTER (WHERE state = 'idle')   AS idle,
+    count(*) FILTER (WHERE state IN ('idle in transaction', 'idle in transaction (aborted)')) AS idle_tx
+  FROM pg_stat_activity
+  WHERE backend_type = 'client backend'
+) c
 WHERE d.datname = current_database()
 `
 
