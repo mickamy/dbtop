@@ -17,7 +17,11 @@ SELECT a.pid, a.usename, a.datname, a.state,
        EXTRACT(EPOCH FROM now() - a.xact_start)::float8  AS xact_age
 FROM pg_stat_activity a
 WHERE a.pid <> pg_backend_pid()
-ORDER BY query_age DESC NULLS LAST
+ORDER BY CASE
+           WHEN a.state IN ('idle in transaction', 'idle in transaction (aborted)')
+             THEN EXTRACT(EPOCH FROM now() - a.xact_start)
+           ELSE EXTRACT(EPOCH FROM now() - a.query_start)
+         END DESC NULLS LAST
 `
 
 func (d *Driver) Activity(ctx context.Context) ([]driver.Backend, error) {
