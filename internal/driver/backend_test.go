@@ -60,6 +60,11 @@ func TestBackendDuration(t *testing.T) {
 			backend: driver.Backend{State: driver.StateActive},
 			wantOK:  false,
 		},
+		{
+			name:    "idle ignores stale query age",
+			backend: driver.Backend{State: driver.StateIdle, QueryAge: new(2 * time.Hour)},
+			wantOK:  false,
+		},
 	}
 
 	for _, tt := range tests {

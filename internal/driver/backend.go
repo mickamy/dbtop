@@ -54,18 +54,19 @@ type Backend struct {
 	BackgroundWorker bool
 }
 
-// Duration returns the DURATION-column value: transaction age for
-// idle-in-transaction backends, query age otherwise.
+// Duration returns the value shown in the DURATION column. Idle and unknown
+// backends have none: their query_start is stale from the last query.
 func (b Backend) Duration() (time.Duration, bool) {
 	switch b.State {
+	case StateActive:
+		if b.QueryAge != nil {
+			return *b.QueryAge, true
+		}
 	case StateIdleInTx, StateIdleInTxAborted:
 		if b.XactAge != nil {
 			return *b.XactAge, true
 		}
-	case StateUnknown, StateActive, StateIdle:
-		if b.QueryAge != nil {
-			return *b.QueryAge, true
-		}
+	case StateUnknown, StateIdle:
 	}
 
 	return 0, false
