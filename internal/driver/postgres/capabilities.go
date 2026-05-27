@@ -28,5 +28,11 @@ func (d *Driver) Capabilities(ctx context.Context) (driver.Capabilities, error) 
 		return driver.Capabilities{}, fmt.Errorf("query capabilities: %w", err)
 	}
 
+	// A superuser can always monitor and kill, regardless of role membership.
+	if capabilities.Superuser {
+		capabilities.Monitor = true
+		capabilities.Kill = true
+	}
+
 	return capabilities, nil
 }
