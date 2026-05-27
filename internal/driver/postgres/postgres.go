@@ -5,7 +5,11 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/mickamy/dbtop/internal/driver"
 )
+
+var _ driver.Driver = (*Driver)(nil)
 
 // PostgreSQL 14.0 (server_version_num); 14+ gives both total_exec_time and pg_blocking_pids.
 const minServerVersionNum = 140000
