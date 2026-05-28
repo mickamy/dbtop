@@ -30,6 +30,10 @@ type Model struct {
 	tab    Tab
 	paused bool
 
+	// awaitingResult is true while the poll/tick chain is alive; it stops a
+	// second chain from starting when unpausing before a pending tick fires.
+	awaitingResult bool
+
 	backends   []driver.Backend
 	metrics    driver.MetricSample
 	statements []driver.Statement
@@ -40,7 +44,7 @@ type Model struct {
 }
 
 func New(d driver.Driver, caps driver.Capabilities, interval time.Duration) Model {
-	return Model{driver: d, caps: caps, interval: interval, keys: defaultKeys(), tab: TabActivity}
+	return Model{driver: d, caps: caps, interval: interval, keys: defaultKeys(), tab: TabActivity, awaitingResult: true}
 }
 
 // Init seeds the poll loop with one immediate fetch; each result schedules the
@@ -61,6 +65,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tickMsg:
 		if m.paused {
+			m.awaitingResult = false
+
 			return m, nil
 		}
 
@@ -108,6 +114,13 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if m.paused {
 			return m, nil
 		}
+
+		// A live chain resumes on its own; only reseed once it has stopped.
+		if m.awaitingResult {
+			return m, nil
+		}
+
+		m.awaitingResult = true
 
 		return m, m.poll()
 	}

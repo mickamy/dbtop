@@ -140,6 +140,47 @@ func TestRowsClippedToWidth(t *testing.T) {
 	}
 }
 
+func TestUnpauseDoesNotStartSecondPollLoop(t *testing.T) {
+	t.Parallel()
+
+	// Pausing then unpausing before the pending tick fires must not start a
+	// second concurrent poll chain.
+	var model tea.Model = tui.New(fakeDriver{}, driver.Capabilities{}, time.Second)
+
+	model, _ = model.Update(tea.KeyMsg{Type: tea.KeySpace}) // pause
+	model, cmd := model.Update(tea.KeyMsg{Type: tea.KeySpace})
+
+	if cmd != nil {
+		t.Error("unpause while the chain is still alive should not reseed a poll")
+	}
+
+	if !asModel(t, model).AwaitingResult() {
+		t.Error("chain should still be considered alive")
+	}
+}
+
+func TestUnpauseResumesAfterChainStopped(t *testing.T) {
+	t.Parallel()
+
+	var model tea.Model = tui.New(fakeDriver{}, driver.Capabilities{}, time.Second)
+
+	model, _ = model.Update(tea.KeyMsg{Type: tea.KeySpace}) // pause
+	model, _ = model.Update(tui.TickMsg())                  // tick fires while paused: chain stops
+
+	if asModel(t, model).AwaitingResult() {
+		t.Fatal("a tick while paused should stop the chain")
+	}
+
+	model, cmd := model.Update(tea.KeyMsg{Type: tea.KeySpace}) // unpause
+	if cmd == nil {
+		t.Error("unpause after the chain stopped should reseed a poll")
+	}
+
+	if !asModel(t, model).AwaitingResult() {
+		t.Error("chain should be alive again after reseeding")
+	}
+}
+
 func TestQuitKey(t *testing.T) {
 	t.Parallel()
 
