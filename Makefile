@@ -43,11 +43,14 @@ test:
 test-integration:
 	go test -tags=integration -p 1 ./... -race $(GOTESTFLAGS)
 
+COMPOSE_PROFILE ?=
+compose_profile_args = $(foreach p,$(COMPOSE_PROFILE),--profile $(p))
+
 compose-up:
-	$(DOCKER_COMPOSE) up -d --wait
+	$(DOCKER_COMPOSE) $(compose_profile_args) up -d --wait
 
 compose-down:
-	$(DOCKER_COMPOSE) down
+	$(DOCKER_COMPOSE) $(compose_profile_args) down
 
 lint:
 	@command -v golangci-lint >/dev/null 2>&1 || { \
