@@ -1,11 +1,24 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"io"
+	"strings"
+	"time"
 
+	tea "github.com/charmbracelet/bubbletea"
+
+	"github.com/mickamy/dbtop/internal/driver/postgres"
 	"github.com/mickamy/dbtop/internal/exit"
+	"github.com/mickamy/dbtop/internal/tui"
 )
+
+// connectTimeout bounds the initial connect + version probe.
+const connectTimeout = 10 * time.Second
+
+// defaultInterval is the poll interval until --interval is wired up.
+const defaultInterval = time.Second
 
 func Run(args []string, stdout, stderr io.Writer) int {
 	if len(args) == 0 {
@@ -16,9 +29,38 @@ func Run(args []string, stdout, stderr io.Writer) int {
 
 	dsn := args[0]
 
-	fmt.Fprintf(stderr, "dbtop: live monitor not implemented yet (dsn %q)\n", dsn)
+	if strings.HasPrefix(dsn, "mysql") {
+		fmt.Fprintln(stderr, "dbtop: the MySQL driver is not implemented yet")
 
-	return exit.NotImplemented
+		return exit.Error
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout)
+	defer cancel()
+
+	d, err := postgres.Open(ctx, dsn)
+	if err != nil {
+		fmt.Fprintf(stderr, "dbtop: %v\n", err)
+
+		return exit.Error
+	}
+	defer func() { _ = d.Close() }()
+
+	caps, err := d.Capabilities(ctx)
+	if err != nil {
+		fmt.Fprintf(stderr, "dbtop: %v\n", err)
+
+		return exit.Error
+	}
+
+	program := tea.NewProgram(tui.New(d, caps, defaultInterval), tea.WithAltScreen())
+	if _, err := program.Run(); err != nil {
+		fmt.Fprintf(stderr, "dbtop: %v\n", err)
+
+		return exit.Error
+	}
+
+	return exit.OK
 }
 
 func PrintUsage(w io.Writer) {
