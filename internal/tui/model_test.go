@@ -2,6 +2,7 @@ package tui_test
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -17,18 +18,19 @@ type fakeDriver struct {
 	backends   []driver.Backend
 	sample     driver.MetricSample
 	statements []driver.Statement
+	err        error
 }
 
 func (f fakeDriver) Activity(context.Context) ([]driver.Backend, error) {
-	return f.backends, nil
+	return f.backends, f.err
 }
 
 func (f fakeDriver) Metrics(context.Context) (driver.MetricSample, error) {
-	return f.sample, nil
+	return f.sample, f.err
 }
 
 func (f fakeDriver) Statements(context.Context) ([]driver.Statement, error) {
-	return f.statements, nil
+	return f.statements, f.err
 }
 
 func (f fakeDriver) ResetStatements(context.Context) error  { return nil }
@@ -178,6 +180,37 @@ func TestUnpauseResumesAfterChainStopped(t *testing.T) {
 
 	if !asModel(t, model).AwaitingResult() {
 		t.Error("chain should be alive again after reseeding")
+	}
+}
+
+func TestMetricsTabRenders(t *testing.T) {
+	t.Parallel()
+
+	d := fakeDriver{sample: driver.MetricSample{
+		MaxConnections: 100,
+		Conns:          driver.ConnCounts{Total: 14, Active: 9, Idle: 3, IdleInTx: 2},
+	}}
+
+	var model tea.Model = tui.New(d, driver.Capabilities{}, time.Second)
+	model, _ = model.Update(tea.KeyMsg{Type: tea.KeyTab})    // Metrics
+	model = mustUpdate(t, model, asModel(t, model).Init()()) // poll Metrics
+
+	view := model.View()
+	if !strings.Contains(view, "14/100") {
+		t.Errorf("metrics tab missing connection summary:\n%s", view)
+	}
+}
+
+func TestErrorIsRendered(t *testing.T) {
+	t.Parallel()
+
+	d := fakeDriver{err: errors.New("boom")}
+
+	m := tui.New(d, driver.Capabilities{}, time.Second)
+	view := mustUpdate(t, m, m.Init()()).View()
+
+	if !strings.Contains(view, "boom") {
+		t.Errorf("error not surfaced in view:\n%s", view)
 	}
 }
 
